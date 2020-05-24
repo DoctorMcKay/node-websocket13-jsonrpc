@@ -7,8 +7,9 @@
 
 This is a server implementation of [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over WebSockets.
 
-A browser client implementation is available under `browser`. If you want to write your own implementation, the only
-special consideration is that incoming connections **must** support the subprotocol `jsonrpc-2.0`.
+A browser client implementation is available under [`browser`](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/tree/master/browser).
+If you want to write your own implementation, the only special consideration is that incoming connections **must** support
+the subprotocol `jsonrpc-2.0`.
 
 Please note that this server implementation does not support JSON-RPC batches, since that practically isn't useful over
 a transport like WebSocket.
@@ -26,17 +27,17 @@ The module exports the following:
 
 # ConnectionState
 
-[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc2/blob/master/enums/ConnectionState.js)
+[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/ConnectionState.js)
 
 # JsonRpcErrorCode
 
-[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc2/blob/master/enums/JsonRpcErrorCode.js)
+[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/JsonRpcErrorCode.js)
 
 Reserved JSON-RPC error codes [are defined here](https://www.jsonrpc.org/specification#error_object).
 
 # WebSocketStatusCode
 
-[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc2/blob/master/enums/WebSocketStatusCode.js)
+[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/WebSocketStatusCode.js)
 
 # RpcError
 
