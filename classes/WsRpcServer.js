@@ -100,6 +100,19 @@ class WsRpcServer extends EventEmitter {
 			connection.notify(method, params);
 		});
 	}
+
+	/**
+	 * @param {WsRpcConnection} connection
+	 * @param {WebSocketStatusCode|number} code
+	 * @param {string} reason
+	 * @param {boolean} initiatedByUs
+	 * @private
+	 */
+	_handleDisconnect(connection, code, reason, initiatedByUs) {
+		this.emit('disconnect', connection, code, reason, initiatedByUs);
+		connection.groups.forEach(group => connection.leaveGroup(group));
+		delete this._connections[connection.id];
+	}
 }
 
 module.exports = WsRpcServer;

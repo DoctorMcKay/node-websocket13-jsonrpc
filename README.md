@@ -176,6 +176,14 @@ with these exceptions:
 
 **This event must be handled or else all incoming connections will stall.**
 
+### disconnect
+- `connection` - The [`WsRpcConnection`](#wsrpcconnection) that disconnected
+- `code` - A value from [`WebSocketStatusCode`](#websocketstatuscode)
+- `reason` - A string, possibly empty, describing why they disconnected
+- `initiatedByUs` - A boolean indicating whether the disconnection was initiated by the server (true) or by the client (false)
+
+Emitted when a remote disconnects.
+
 ## Properties
 
 ### connections

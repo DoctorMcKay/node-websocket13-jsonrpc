@@ -93,6 +93,14 @@ class WsRpcConnection {
 				handler(data);
 			}
 		});
+
+		socket.on('disconnect', (code, reason, initiatedByUs) => {
+			this.server._handleDisconnect(this, code, reason, initiatedByUs);
+		});
+
+		socket.on('error', (err) => {
+			this.server._handleDisconnect(this, WebSocketStatusCode.AbnormalTermination, err.message, false);
+		});
 	}
 
 	get state() {
