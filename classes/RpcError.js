@@ -2,7 +2,7 @@ class RpcError extends Error {
 	/**
 	 *
 	 * @param {string} message
-	 * @param {number} code - MUST be an integer
+	 * @param {JsonRpcErrorCode|number} code - MUST be an integer
 	 * @param {object|null} data - Optional data to send along with the error
 	 */
 	constructor(message, code, data = null) {
