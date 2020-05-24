@@ -1,17 +1,17 @@
 {
-	"name": "websocket13-jsonrpc2",
+	"name": "websocket13-jsonrpc",
 	"version": "0.1.0",
 	"description": "JSON-RPC 2.0 implementation on top of WebSocket13",
 	"author": "Alex Corn <alex@alexcorn.com>",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc2"
+		"url": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc"
 	},
 	"license": "MIT",
 	"bugs": {
-		"url": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc2/issues"
+		"url": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc/issues"
 	},
-	"homepage": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc2",
+	"homepage": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc",
 	"dependencies": {
 		"@doctormckay/stdlib": "^1.11.0",
 		"websocket13": "^2.0.0"
