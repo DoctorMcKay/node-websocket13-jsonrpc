@@ -6,17 +6,21 @@ const WsRpcConnection = require('./WsRpcConnection.js');
 const ACTIVE_SUBPROTOCOL = 'jsonrpc-2.0';
 
 class WsRpcServer extends EventEmitter {
+	/**
+	 * @param {{pingInterval?: number, pingTimeout?: number, pingFailures?: number, permessageDeflate?: boolean, requireObjectParams?: boolean}} [options]
+	 */
 	constructor(options) {
 		super();
 
+		let opts = Object.assign({}, options || {});
+
 		this._connections = {};
 		this._groups = {};
-		this._options = options;
+		this._options = opts;
 
 		this._requestHandlers = {};
 		this._notificationHandlers = {};
 
-		let opts = Object.assign({}, options);
 		opts.protocols = [ACTIVE_SUBPROTOCOL];
 		this._ws = new WS13.WebSocketServer(opts);
 
