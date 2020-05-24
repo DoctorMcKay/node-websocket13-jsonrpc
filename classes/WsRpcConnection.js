@@ -6,6 +6,7 @@ const RpcError = require('../classes/RpcError.js');
 
 const ConnectionState = require('../enums/ConnectionState.js');
 const JsonRpcErrorCode = require('../enums/JsonRpcErrorCode.js');
+const WebSocketStatusCode = require('../enums/WebSocketStatusCode.js');
 
 class WsRpcConnection {
 	/**
@@ -27,7 +28,7 @@ class WsRpcConnection {
 
 		this.server._connections[this.id] = this;
 
-		socket.on('message', (type, data) => {
+		socket.on('message', async (type, data) => {
 			if (type != WS13.FrameType.Data.Text) {
 				this.disconnect(WS13.StatusCode.InconsistentData, 'Received invalid frame type');
 				return;
@@ -51,7 +52,7 @@ class WsRpcConnection {
 
 			if (isRequest) {
 				// If we want params to be objects, then make sure they are
-				if (this.server._options.requireObjectParams && !['undefined', 'object'].includes(typeof data.params)) {
+				if (this.server._options.requireObjectParams && (typeof data.params != 'object' || data.params === null)) {
 					return this._sendError(data.id || null, JsonRpcErrorCode.InvalidParams, 'Invalid params');
 				}
 
@@ -63,15 +64,15 @@ class WsRpcConnection {
 					}
 
 					// Invoke the handler
-					handler(this, data.params).then((result) => {
-						this._sendResponse(data.id, result);
-					}).catch((ex) => {
+					try {
+						this._sendResponse(data.id, await handler(this, data.params));
+					} catch (ex) {
 						if (ex instanceof RpcError) {
 							this._sendError(data.id, ex.code, ex.message, ex.data);
 						} else {
 							throw ex;
 						}
-					});
+					}
 				} else {
 					// This is a notification
 					let handler = this.server._notificationHandlers[data.method];
@@ -111,7 +112,7 @@ class WsRpcConnection {
 
 	/**
 	 * Close this connection gracefully.
-	 * @param {WS13.StatusCode|number} statusCode
+	 * @param {WebSocketStatusCode|number} statusCode
 	 * @param {string} [reason]
 	 */
 	disconnect(statusCode, reason) {
@@ -122,10 +123,10 @@ class WsRpcConnection {
 
 	/**
 	 * Same as TLS.TLSSocket.getPeerCertificate
-	 * @param {boolean} detailed
+	 * @param {boolean} [detailed=false]
 	 * @returns {object|null}
 	 */
-	getPeerCertificate(detailed) {
+	getPeerCertificate(detailed = false) {
 		return this._socket.getPeerCertificate(detailed);
 	}
 
@@ -168,6 +169,10 @@ class WsRpcConnection {
 	 * @returns {boolean} - true if joined group successfully; false if already in group
 	 */
 	joinGroup(group) {
+		if (group == 'all') {
+			throw new Error('The group name \'all\' is reserved.');
+		}
+
 		if (this._groups.includes(group)) {
 			return false;
 		}
@@ -184,6 +189,10 @@ class WsRpcConnection {
 	 * @returns {boolean} - true if left group successfully; false if not in group
 	 */
 	leaveGroup(group) {
+		if (group == 'all') {
+			throw new Error('The group name \'all\' is reserved.');
+		}
+
 		let idx = this._groups.indexOf(group);
 		if (idx == -1) {
 			return false;
@@ -256,11 +265,7 @@ class WsRpcConnection {
 	 * @returns {*}
 	 */
 	data(key, value = undefined) {
-		if (typeof value == 'undefined') {
-			return this._data[key];
-		}
-
-		this._data[key] = value;
+		return this._socket.data(key, value);
 	}
 
 	/**

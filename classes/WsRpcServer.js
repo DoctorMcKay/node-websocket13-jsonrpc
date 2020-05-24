@@ -38,6 +38,22 @@ class WsRpcServer extends EventEmitter {
 	}
 
 	/**
+	 * Get all currently-active connections.
+	 * @returns {WsRpcConnection[]}
+	 */
+	get connections() {
+		return Object.values(this._connections);
+	}
+
+	/**
+	 * Get all extant group names.
+	 * @returns {string[]}
+	 */
+	get groups() {
+		return Object.keys(this._groups);
+	}
+
+	/**
 	 * Bind the WebSocket RPC server to a web server.
 	 * @param {HTTP.Server|HTTPS.Server} server
 	 */
@@ -46,9 +62,19 @@ class WsRpcServer extends EventEmitter {
 	}
 
 	/**
+	 * Get all the members of a given group.
+	 * @param {string} group - The group name
+	 * @returns {WsRpcConnection[]}
+	 */
+	groupMembers(group) {
+		return (this._groups[group] || []).slice(0);
+	}
+
+	/**
 	 * Register a handler for a method.
 	 * @param {string} name
-	 * @param {function<Promise>} handler - A function to be invoked when the method is called. Must return a Promise. Invoked with arguments (WsRpcConnection, Object params)
+	 * @param {function<Promise>} handler - A function to be invoked when the method is called.
+	 * Must return a value immediately or return a Promise. Invoked with arguments (WsRpcConnection, any params)
 	 */
 	registerMethod(name, handler) {
 		this._requestHandlers[name] = handler;
@@ -57,10 +83,22 @@ class WsRpcServer extends EventEmitter {
 	/**
 	 * Register a handler for an incoming notification. Notifications may not be responded to.
 	 * @param {string} name
-	 * @param {function} handler - Invoked with arguments (WsRpcConnection, Object params)
+	 * @param {function} handler - Invoked with arguments (WsRpcConnection, any params)
 	 */
 	registerNotification(name, handler) {
 		this._notificationHandlers[name] = handler;
+	}
+
+	/**
+	 * Send a notification to a group.
+	 * @param {string} group - Either a group name, or the string 'all' to send to all current connections.
+	 * @param {string} method
+	 * @param {*} [params]
+	 */
+	notify(group, method, params) {
+		(group == 'all' ? this.connections : this.groupMembers(group)).forEach((connection) => {
+			connection.notify(method, params);
+		});
 	}
 }
 
