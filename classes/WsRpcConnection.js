@@ -31,7 +31,7 @@ class WsRpcConnection {
 
 		socket.on('message', async (type, data) => {
 			if (type != WS13.FrameType.Data.Text) {
-				this.disconnect(WS13.StatusCode.InconsistentData, 'Received invalid frame type');
+				this.disconnect(WS13.StatusCode.UnacceptableDataType, 'Received invalid frame type');
 				return;
 			}
 

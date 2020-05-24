@@ -2,12 +2,8 @@
 
 This is a server implementation of [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over WebSockets.
 
-Currently, no browser implementation is provided, but JSON-RPC is very simple and it should not be difficult to implement.
-The only consideration is that incoming connections **must** support the subprotocol `jsonrpc-2.0`. Example:
-
-```js
-new WebSocket('ws://127.0.0.1:8080', 'jsonrpc-2.0');
-```
+A browser client implementation is available under `browser`. If you want to write your own implementation, the only
+special consideration is that incoming connections **must** support the subprotocol `jsonrpc-2.0`.
 
 # Exports
 
@@ -242,7 +238,7 @@ which will be sent to the remote as an error response.
 const {RpcError, JsonRpcErrorCode} = require('websocket13-jsonrpc2');
 
 server.registerMethod('Add', (connection, params) => {
-    if (typeof params != 'object' || !Array.isArray(params) || params.length != 2) {
+    if (typeof params != 'object' || !Array.isArray(params) || params.length != 2 || typeof params[0] != 'number' || typeof params[1] != 'number') {
         throw new RpcError('Invalid params', JsonRpcErrorCode.InvalidParams);    
     }
     
@@ -250,7 +246,7 @@ server.registerMethod('Add', (connection, params) => {
 });
 
 server.registerMethod('AddAsync', async (connection, params) => {
-    if (typeof params != 'object' || !Array.isArray(params) || params.length != 2) {
+    if (typeof params != 'object' || !Array.isArray(params) || params.length != 2 || typeof params[0] != 'number' || typeof params[1] != 'number') {
         throw new RpcError('Invalid params', JsonRpcErrorCode.InvalidParams);    
     }
     
