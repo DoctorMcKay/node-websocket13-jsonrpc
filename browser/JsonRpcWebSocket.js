@@ -57,7 +57,7 @@ class JsonRpcWebSocket extends WebSocket {
 					});
 				} else {
 					// This is a notification
-					let handler = this.server._notificationHandlers[data.method];
+					let handler = this._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
 						return this._sendError(null, -32601, 'Method not found');
 					}
