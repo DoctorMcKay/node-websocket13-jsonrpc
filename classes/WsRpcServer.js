@@ -67,7 +67,7 @@ class WsRpcServer extends EventEmitter {
 	 * @returns {WsRpcConnection[]}
 	 */
 	groupMembers(group) {
-		return (this._groups[group] || []).slice(0);
+		return (this._groups[group] || []).map(id => this._connections[id]);
 	}
 
 	/**
