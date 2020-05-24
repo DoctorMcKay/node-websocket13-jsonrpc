@@ -5,6 +5,9 @@ This is a server implementation of [JSON-RPC 2.0](https://www.jsonrpc.org/specif
 A browser client implementation is available under `browser`. If you want to write your own implementation, the only
 special consideration is that incoming connections **must** support the subprotocol `jsonrpc-2.0`.
 
+Please note that this server implementation does not support JSON-RPC batches, since that practically isn't useful over
+a transport like WebSocket.
+
 # Exports
 
 The module exports the following:
