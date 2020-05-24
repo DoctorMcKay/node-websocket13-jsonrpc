@@ -13,6 +13,7 @@
 	},
 	"homepage": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc2",
 	"dependencies": {
+		"@doctormckay/stdlib": "^1.11.0",
 		"websocket13": "^2.0.0"
 	},
 	"engines": {
