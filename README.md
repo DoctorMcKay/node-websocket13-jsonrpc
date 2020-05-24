@@ -54,6 +54,10 @@ throw new RpcError('File not found', 100, {filename: '/root/example.txt'});
 A string containing a random ID assigned to this connection. Connection IDs are guaranteed unique for any given set
 of active connections, but once a connection is closed its ID can be reused immediately.
 
+### remoteAddress
+
+The remote IP address.
+
 ### server
 
 The [`WsRpcServer`](#wsrpcserver) that spawned this connection.
