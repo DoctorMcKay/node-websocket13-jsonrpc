@@ -2,6 +2,13 @@
 
 This is a server implementation of [JSON-RPC 2.0](https://www.jsonrpc.org/specification) over WebSockets.
 
+Currently, no browser implementation is provided, but JSON-RPC is very simple and it should not be difficult to implement.
+The only consideration is that incoming connections **must** support the subprotocol `jsonrpc-2.0`. Example:
+
+```js
+new WebSocket('ws://127.0.0.1:8080', 'jsonrpc-2.0');
+```
+
 # Exports
 
 The module exports the following:
