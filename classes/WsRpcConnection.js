@@ -57,7 +57,7 @@ class WsRpcConnection {
 					return this._sendError(data.id || null, JsonRpcErrorCode.InvalidParams, 'Invalid params');
 				}
 
-				if (data.id) {
+				if (typeof data.id != 'undefined') {
 					// This is a request
 					let handler = this.server._requestHandlers[data.method];
 					if (typeof handler != 'function') {
@@ -78,7 +78,7 @@ class WsRpcConnection {
 					// This is a notification
 					let handler = this.server._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found');
+						return this._sendError(undefined, JsonRpcErrorCode.MethodNotFound, 'Method not found');
 					}
 
 					// Invoke the handler. No need to worry about responses or errors.
@@ -87,7 +87,7 @@ class WsRpcConnection {
 			} else if (isResponse) {
 				let handler = this._responseHandlers[data.id];
 				if (typeof handler != 'function') {
-					return this._sendError(null, JsonRpcErrorCode.InvalidResponseID, 'Invalid response message ID');
+					return this._sendError(undefined, JsonRpcErrorCode.InvalidResponseID, 'Invalid response message ID');
 				}
 
 				delete this._responseHandlers[data.id];
@@ -252,9 +252,9 @@ class WsRpcConnection {
 			let id = this._nextMsgId++;
 			this._socket.send(JSON.stringify({
 				jsonrpc: '2.0',
+				id,
 				method,
-				params,
-				id
+				params
 			}));
 
 			this._responseHandlers[id] = (response) => {
@@ -292,15 +292,12 @@ class WsRpcConnection {
 
 		let response = {
 			jsonrpc: '2.0',
+			id,
 			error: {
 				code,
 				message
 			}
 		};
-
-		if (id) {
-			response.id = id;
-		}
 		if (data) {
 			response.error.data = data;
 		}
@@ -321,8 +318,8 @@ class WsRpcConnection {
 
 		this._socket.send(JSON.stringify({
 			jsonrpc: '2.0',
-			result,
-			id
+			id,
+			result
 		}));
 	}
 }
