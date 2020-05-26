@@ -38,9 +38,7 @@ class WsRpcConnection {
 			try {
 				data = JSON.parse(data);
 			} catch (ex) {
-				// Invalid json. We could use JSON-RPC error code -32700 for this, but for invalid JSON I feel it's
-				// better to just terminate the connection
-				return this.disconnect(WS13.StatusCode.InconsistentData, 'Parse error decoding JSON');
+				return this._sendError(null, JsonRpcErrorCode.ParseError, 'Parse error');
 			}
 
 			let isRequest = typeof data.method == 'string';
