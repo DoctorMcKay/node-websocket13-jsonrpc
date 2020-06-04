@@ -59,7 +59,7 @@ class WsRpcConnection {
 					// This is a request
 					let handler = this.server._requestHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(data.id, JsonRpcErrorCode.MethodNotFound, 'Method not found');
+						return this._sendError(data.id, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
 					}
 
 					// Invoke the handler
@@ -76,7 +76,7 @@ class WsRpcConnection {
 					// This is a notification
 					let handler = this.server._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found');
+						return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
 					}
 
 					// Invoke the handler. No need to worry about responses or errors.

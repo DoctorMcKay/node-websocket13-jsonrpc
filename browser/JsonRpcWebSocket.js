@@ -40,7 +40,7 @@ class JsonRpcWebSocket extends WebSocket {
 					// This is a request
 					let handler = this._requestHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(data.id, -32601, 'Method not found');
+						return this._sendError(data.id, -32601, 'Method not found', {method: data.method});
 					}
 
 					// Invoke the handler
@@ -59,7 +59,7 @@ class JsonRpcWebSocket extends WebSocket {
 					// This is a notification
 					let handler = this._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(null, -32601, 'Method not found');
+						return this._sendError(null, -32601, 'Method not found', {method: data.method});
 					}
 
 					// Invoke the handler. No need to worry about responses or errors.
