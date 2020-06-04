@@ -36,7 +36,7 @@ class JsonRpcWebSocket extends WebSocket {
 			}
 
 			if (isRequest) {
-				if (data.id) {
+				if (typeof data.id != 'undefined') {
 					// This is a request
 					let handler = this._requestHandlers[data.method];
 					if (typeof handler != 'function') {
@@ -65,7 +65,7 @@ class JsonRpcWebSocket extends WebSocket {
 					// Invoke the handler. No need to worry about responses or errors.
 					handler(data.params);
 				}
-			} else if (isResponse) {
+			} else if (isResponse && data.id !== null) {
 				let handler = this._responseHandlers[data.id];
 				if (typeof handler != 'function') {
 					return this._sendError(null, -32000, 'Invalid response message ID');
@@ -99,12 +99,10 @@ class JsonRpcWebSocket extends WebSocket {
 			error: {
 				code,
 				message
-			}
+			},
+			id
 		};
 
-		if (id) {
-			response.id = id;
-		}
 		if (data) {
 			response.error.data = data;
 		}

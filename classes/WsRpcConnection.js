@@ -82,7 +82,7 @@ class WsRpcConnection {
 					// Invoke the handler. No need to worry about responses or errors.
 					handler(this, data.params);
 				}
-			} else if (isResponse) {
+			} else if (isResponse && data.id !== null) {
 				let handler = this._responseHandlers[data.id];
 				if (typeof handler != 'function') {
 					return this._sendError(undefined, JsonRpcErrorCode.InvalidResponseID, 'Invalid response message ID');
