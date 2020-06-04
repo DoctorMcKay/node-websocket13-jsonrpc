@@ -70,12 +70,21 @@ class WsRpcServer extends EventEmitter {
 	}
 
 	/**
-	 * Get all the members of a given group.
-	 * @param {string} group - The group name
+	 * Get all the members of a given group or set of groups.
+	 * @param {string|string[]} group - The group name or an array of group names
 	 * @returns {WsRpcConnection[]}
 	 */
 	groupMembers(group) {
-		return (this._groups[group] || []).map(id => this._connections[id]);
+		let ids = {};
+		if (!Array.isArray(group)) {
+			group = [group];
+		}
+
+		group.forEach((groupName) => {
+			(this._groups[groupName] || []).forEach(id => ids[id] = true);
+		});
+
+		return Object.keys(ids).map(id => this._connections[id]);
 	}
 
 	/**
@@ -99,7 +108,7 @@ class WsRpcServer extends EventEmitter {
 
 	/**
 	 * Send a notification to a group.
-	 * @param {string|null} group - Group name to send the notification to or null to send to all.
+	 * @param {string|string[]|null} group - Group name or set of group names to send the notification to or null to send to all.
 	 * @param {string} method
 	 * @param {*} [params]
 	 */

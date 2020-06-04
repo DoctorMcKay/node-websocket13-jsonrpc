@@ -228,6 +228,13 @@ This binds to the server's `upgrade` event. If nothing else has bound to that ev
 - Client request is missing `Sec-WebSocket-Key` header or when base64-decoded, it is not 16 bytes in length
 - Client request is missing `Sec-WebSocket-Version` header or the header's value is not `13`
 
+### groupMembers(group)
+- `group` - Either a group name or an array of group names
+
+Returns an array of [`WsRpcConnection`](#wsrpcconnection) objects for the members in the given set of groups. If you
+pass a single string, returns the list of members of that group. If you pass an array of strings, returns a de-duplicated
+union of group members.
+
 ### registerMethod(name, handler)
 - `name` - String method name
 - `handler` - A function to be invoked when the method is called
@@ -278,11 +285,12 @@ Please note that unless the `requireObjectParams` option is set, `params` can be
 As a JSON-RPC notification requires no response, `handler` should not return anything.
 
 ### notify(group, name[, params])
-- `group` - String name of group to send notification to. Use `null` to send a notification to all active clients.
+- `group` - String name of group or array of string names of groups to send notification to. Use `null` to send a notification to all active clients.
 - `name` - String name of notification to send
 - `params` - Any data type
 
-Sends a JSON-RPC notification to an entire group at once.
+Sends a JSON-RPC notification to an entire group at once. You can also pass an array of groups to send a notification
+to all members of all specified groups.
 
 ### notifyAll(name[, params])
 - `name` - String name of notification to send
