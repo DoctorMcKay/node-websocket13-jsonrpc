@@ -76,7 +76,7 @@ class WsRpcConnection {
 					// This is a notification
 					let handler = this.server._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(undefined, JsonRpcErrorCode.MethodNotFound, 'Method not found');
+						return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found');
 					}
 
 					// Invoke the handler. No need to worry about responses or errors.
@@ -85,7 +85,7 @@ class WsRpcConnection {
 			} else if (isResponse && data.id !== null) {
 				let handler = this._responseHandlers[data.id];
 				if (typeof handler != 'function') {
-					return this._sendError(undefined, JsonRpcErrorCode.InvalidResponseID, 'Invalid response message ID');
+					return this._sendError(null, JsonRpcErrorCode.InvalidResponseID, 'Invalid response message ID');
 				}
 
 				delete this._responseHandlers[data.id];
