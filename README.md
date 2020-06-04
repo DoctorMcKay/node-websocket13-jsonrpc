@@ -192,6 +192,11 @@ with these exceptions:
 
 **This event must be handled or else all incoming connections will stall.**
 
+### connect
+- `connection` - The [`WsRpcConnection`](#wsrpcconnection) that connected
+
+Emitted when a new connection is established.
+
 ### disconnect
 - `connection` - The [`WsRpcConnection`](#wsrpcconnection) that disconnected
 - `code` - A value from [`WebSocketStatusCode`](#websocketstatuscode)

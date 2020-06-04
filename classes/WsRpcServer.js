@@ -32,11 +32,15 @@ class WsRpcServer extends EventEmitter {
 
 			this.emit('handshake', handshakeData, reject, (response) => {
 				response = response || {};
-				return new WsRpcConnection(this, accept({
+				let conn = new WsRpcConnection(this, accept({
 					headers: response.headers,
 					options: response.options,
 					extensions: response.extensions
 				}));
+				setImmediate(() => {
+					this.emit('connect', conn);
+				});
+				return conn;
 			});
 		});
 	}
