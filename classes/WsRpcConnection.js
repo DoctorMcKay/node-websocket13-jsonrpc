@@ -16,6 +16,7 @@ class WsRpcConnection {
 	constructor(server, socket) {
 		this.server = server;
 		this.remoteAddress = socket.remoteAddress;
+		this.handshakeData = socket.handshakeData;
 		this._socket = socket;
 		this._data = {};
 		this._groups = [];

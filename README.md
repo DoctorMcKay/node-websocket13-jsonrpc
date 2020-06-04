@@ -78,6 +78,10 @@ The [`WsRpcServer`](#wsrpcserver) that spawned this connection.
 
 The state of this connection. This is a value from [`ConnectionState`](#connectionstate)
 
+### handshakeData
+
+The data object from the `handshake` event for this connection.
+
 ### groups
 
 An array containing the string name of each group that this connection is a member of.
