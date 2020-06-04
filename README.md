@@ -130,16 +130,12 @@ authenticated to a given user ID in a dedicated group.
 
 Groups are ad-hoc and are created or destroyed as needed.
 
-**The group name 'all' is reserved and an Error will be thrown if you attempt to join a connection to a group named 'all'.**
-
 Returns `true` if this connection was joined to the group successfully, or `false` if it was already in the given group.
 
 ### leaveGroup(group)
 - `group` - String group name
 
 Leaves this connection from a group. If this was the last member of the group, the group is destroyed.
-
-**The group name 'all' is reserved and an Error will be thrown if you attempt to leave a connection from a group named 'all'.**
 
 Returns `true` if this connection left the group successfully, or `false` if it was not in the given group.
 
@@ -282,8 +278,14 @@ Please note that unless the `requireObjectParams` option is set, `params` can be
 As a JSON-RPC notification requires no response, `handler` should not return anything.
 
 ### notify(group, name[, params])
-- `group` - String name of group to send notification to. Use `'all'` to send a notification to all active clients.
+- `group` - String name of group to send notification to. Use `null` to send a notification to all active clients.
 - `name` - String name of notification to send
 - `params` - Any data type
 
 Sends a JSON-RPC notification to an entire group at once.
+
+### notifyAll(name[, params])
+- `name` - String name of notification to send
+- `params` - Any data type
+
+Sends a JSON-RPC notification to all connected clients.

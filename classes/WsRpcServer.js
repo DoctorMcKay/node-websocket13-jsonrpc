@@ -99,14 +99,23 @@ class WsRpcServer extends EventEmitter {
 
 	/**
 	 * Send a notification to a group.
-	 * @param {string} group - Either a group name, or the string 'all' to send to all current connections.
+	 * @param {string|null} group - Group name to send the notification to or null to send to all.
 	 * @param {string} method
 	 * @param {*} [params]
 	 */
 	notify(group, method, params) {
-		(group == 'all' ? this.connections : this.groupMembers(group)).forEach((connection) => {
+		(group === null ? this.connections : this.groupMembers(group)).forEach((connection) => {
 			connection.notify(method, params);
 		});
+	}
+
+	/**
+	 * Send a notification to all connected clients.
+	 * @param {string} method
+	 * @param {*} [params]
+	 */
+	notifyAll(method, params) {
+		return this.notify(null, method, params);
 	}
 
 	/**

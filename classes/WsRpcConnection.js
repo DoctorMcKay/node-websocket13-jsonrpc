@@ -176,10 +176,6 @@ class WsRpcConnection {
 	 * @returns {boolean} - true if joined group successfully; false if already in group
 	 */
 	joinGroup(group) {
-		if (group == 'all') {
-			throw new Error('The group name \'all\' is reserved.');
-		}
-
 		if (this._groups.includes(group)) {
 			return false;
 		}
@@ -196,10 +192,6 @@ class WsRpcConnection {
 	 * @returns {boolean} - true if left group successfully; false if not in group
 	 */
 	leaveGroup(group) {
-		if (group == 'all') {
-			throw new Error('The group name \'all\' is reserved.');
-		}
-
 		let idx = this._groups.indexOf(group);
 		if (idx == -1) {
 			return false;
