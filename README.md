@@ -23,6 +23,7 @@ The module exports the following:
 - [`WebSocketStatusCode`](#websocketstatuscode) - An enum containing WebSocket closure status codes
 - [`RpcError`](#rpcerror) - An extension to `Error` used for responding to RPC calls with errors
 - [`WsRpcConnection`](#wsrpcconnection) - An object representing individual connections
+- [`WsRpcOutgoingConnection`](#wsrpcoutgoingconnection) - An object representing outgoing connections
 - [`WsRpcServer`](#wsrpcserver) - An object for running a server
 
 # ConnectionState
@@ -158,6 +159,13 @@ Returns `true` if the notification was sent, or `false` if the connection was no
 Sends a request to the remote. Returns a Promise that will be resolved with the result of the request, or rejected with
 a [`RpcError`](#rpcerror) if the request fails.
 
+## Events
+
+### latency
+- `pingTime` - Round-trip latency in milliseconds
+
+Emitted periodically (unless you've disabled pings in options) with the latency of the connection.
+
 # WsRpcServer
 
 This class instantiates a WebSocket server.
@@ -165,8 +173,9 @@ This class instantiates a WebSocket server.
 The constructor takes a single `options` object:
 
 - `requireObjectParams` - If passed and set to `true`, then incoming JSON-RPC messages will be rejected if their `params`
-are any data type except object (not including `null`) or array.
-- All other options from [`WS13.WebSocketServer`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocketServer#options) are allowed, except `protocols`.
+                          are any data type except object (not including `null`) or array.
+- All other options from [`WS13.WebSocketServer`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocketServer#options)
+  are allowed, except `protocols`.
 
 The `requireObjectParams` option is designed to allow you to do things like this without worrying about invalid incoming
 params causing a crash:
@@ -301,3 +310,91 @@ to all members of all specified groups.
 - `params` - Any data type
 
 Sends a JSON-RPC notification to all connected clients.
+
+# WsRpcOutgoingConnection
+
+**This class extends [`WsRpcConnection`](#wsrpcconnection). Methods, properties, and events inherited from that class
+are not listed below, so you should check those docs as well.**
+
+Used to establish outgoing connections. You should instantiate a new instance of this class to establish a new outgoing
+connection to a JSON-RPC server.
+
+The constructor takes two arguments:
+
+- `url` - The WebSocket URL you want to connect to (e.g. `ws://example.com/?some=query`)
+- `options` - Optional. An object with zero or more of these properties:
+    - `requireObjectParams` - If passed and set to `true`, then incoming JSON-RPC messages will be rejected if their `params`
+                              are any data type except object (not including `null`) or array.
+    - All other options from [`WS13.WebSocket`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocket#options)
+      are allowed, except `protocols`.
+      
+#### Example
+
+```js
+const {WsRpcOutgoingConnection} = require('websocket13-jsonrpc');
+
+let conn = new WsRpcOutgoingConnection('ws://127.0.0.1:8080', {pingInterval: 30000});
+```
+
+## Properties
+
+### server
+
+Always `null` for outgoing connections.
+
+### groups
+
+Always `[]` (empty array) for outgoing connections.
+
+## Methods
+
+### joinGroup()
+
+Outgoing connections cannot be joined to groups, so this method throws an Error if invoked.
+
+### leaveGroup()
+
+Outgoing connections cannot be joined to groups, so this method throws an Error if invoked.
+
+### registerMethod(name, handler)
+- `name` - String
+- `handler` - Function
+
+Functionally identical to [`WsRpcServer#registerMethod(name, handler)`](#registermethodname-handler).
+This is how you should register methods for outgoing connections.
+
+### registerNotification(name, handler)
+- `name` - String
+- `handler` - Function
+
+Functionally identical to [`WsRpcServer#registerNotification(name, handler)`](#registernotificationname-handler).
+This is how you should register notifications for outgoing connections.
+
+## Events
+
+### connected
+- `details` - An object containing connection details. Identical to [`WS13.WebSocket#connected`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocket#connected)
+
+Emitted when the connection is successfully established.
+
+### disconnected
+- `code` - A value from [`WebSocketStatusCode`](#websocketstatuscode)
+- `reason` - A string, possibly empty, desribing why we disconnected
+- `initiatedByUs` - A boolean indicating whether the disconnected was initiated by us/the client (true) or by the server (false)
+
+Emitted when we disconnect from the server.
+
+### error
+- `err` - An `Error` object
+
+Emitted when a fatal error causes our connection to fail (while connecting) or be disconnected (while connected).
+Under certain conditions, `err` may contain zero or more of these properties:
+
+- `responseCode` - The HTTP status code we received if the error occurred during the handshake
+- `responseText` - The HTTP status text we received if the error occurred during the handshake
+- `httpVersion` - The HTTP version employed by the server if the error occurred during the handshake
+- `headers` - An object containing the HTTP headers we received from the server if the error occurred during the handshake
+- `expected` - A string containing the `Sec-WebSocket-Accept` value we expected to receive, if the error occurred because we didn't
+- `actual` - A string containing the actual `Sec-WebSocket-Accept` value we received, if the error occurred because it didn't match what we expected
+- `state` - The connection state at the time of error. Always present.
+- `code` - A value from the `WS13.StatusCode` enum, if the error occurred after the WebSocket connection was established
