@@ -23,8 +23,8 @@ The module exports the following:
 - [`WebSocketStatusCode`](#websocketstatuscode) - An enum containing WebSocket closure status codes
 - [`RpcError`](#rpcerror) - An extension to `Error` used for responding to RPC calls with errors
 - [`WsRpcConnection`](#wsrpcconnection) - An object representing individual connections
-- [`WsRpcOutgoingConnection`](#wsrpcoutgoingconnection) - An object representing outgoing connections
 - [`WsRpcServer`](#wsrpcserver) - An object for running a server
+- [`WsRpcOutgoingConnection`](#wsrpcoutgoingconnection) - An object representing outgoing connections
 
 # ConnectionState
 
