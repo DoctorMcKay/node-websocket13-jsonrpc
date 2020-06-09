@@ -1,4 +1,5 @@
 const Crypto = require('crypto');
+const {EventEmitter} = require('events');
 const StdLib = require('@doctormckay/stdlib');
 const WS13 = require('websocket13');
 
@@ -8,27 +9,35 @@ const ConnectionState = require('../enums/ConnectionState.js');
 const JsonRpcErrorCode = require('../enums/JsonRpcErrorCode.js');
 const WebSocketStatusCode = require('../enums/WebSocketStatusCode.js');
 
-class WsRpcConnection {
+class WsRpcConnection extends EventEmitter {
 	/**
 	 * @param {WsRpcServer} server
 	 * @param {WS13.WebSocket} socket
 	 */
 	constructor(server, socket) {
-		this.server = server;
+		super();
+
 		this.remoteAddress = socket.remoteAddress;
 		this.handshakeData = socket.handshakeData;
+		this._server = server;
 		this._socket = socket;
 		this._data = {};
 		this._groups = [];
 		this._nextMsgId = 1;
 		this._responseHandlers = {};
 
-		// Generate an ID
-		do {
-			this.id = Crypto.randomBytes(4).toString('hex');
-		} while (this.server._connections[this.id]);
+		if (this._server) {
+			// Generate an ID
+			do {
+				this.id = Crypto.randomBytes(4).toString('hex');
+			} while (this._server._connections[this.id]);
 
-		this.server._connections[this.id] = this;
+			this._server._connections[this.id] = this;
+
+			this._requestHandlers = this._server._requestHandlers;
+			this._notificationHandlers = this._server._notificationHandlers;
+			this._options = this._server._options;
+		}
 
 		socket.on('message', async (type, data) => {
 			if (type != WS13.FrameType.Data.Text) {
@@ -52,20 +61,27 @@ class WsRpcConnection {
 
 			if (isRequest) {
 				// If we want params to be objects, then make sure they are
-				if (this.server._options.requireObjectParams && (typeof data.params != 'object' || data.params === null)) {
+				if (this._options.requireObjectParams && (typeof data.params != 'object' || data.params === null)) {
 					return this._sendError(data.id || null, JsonRpcErrorCode.InvalidParams, 'Invalid params');
 				}
 
 				if (typeof data.id != 'undefined') {
 					// This is a request
-					let handler = this.server._requestHandlers[data.method];
+					let handler = this._requestHandlers[data.method];
 					if (typeof handler != 'function') {
 						return this._sendError(data.id, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
 					}
 
 					// Invoke the handler
 					try {
-						this._sendResponse(data.id, await handler(this, data.params));
+						let result;
+						if (this._server) {
+							result = await handler(this, data.params);
+						} else {
+							// No need to include `this` if this is an outgoing connection
+							result = await handler(data.params);
+						}
+						this._sendResponse(data.id, result);
 					} catch (ex) {
 						if (ex instanceof RpcError) {
 							this._sendError(data.id, ex.code, ex.message, ex.data);
@@ -75,13 +91,17 @@ class WsRpcConnection {
 					}
 				} else {
 					// This is a notification
-					let handler = this.server._notificationHandlers[data.method];
+					let handler = this._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
 						return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
 					}
 
 					// Invoke the handler. No need to worry about responses or errors.
-					handler(this, data.params);
+					if (this._server) {
+						handler(this, data.params);
+					} else {
+						handler(data.params);
+					}
 				}
 			} else if (isResponse && data.id !== null) {
 				let handler = this._responseHandlers[data.id];
@@ -94,13 +114,23 @@ class WsRpcConnection {
 			}
 		});
 
-		socket.on('disconnect', (code, reason, initiatedByUs) => {
-			this.server._handleDisconnect(this, code, reason, initiatedByUs);
-		});
+		if (this._server) {
+			socket.on('disconnect', (code, reason, initiatedByUs) => {
+				this._server._handleDisconnect(this, code, reason, initiatedByUs);
+			});
 
-		socket.on('error', (err) => {
-			this.server._handleDisconnect(this, WebSocketStatusCode.AbnormalTermination, err.message, false);
+			socket.on('error', (err) => {
+				this._server._handleDisconnect(this, WebSocketStatusCode.AbnormalTermination, err.message, false);
+			});
+		}
+
+		socket.on('latency', (pingTime) => {
+			this.emit('latency', pingTime);
 		});
+	}
+
+	get server() {
+		return this._server;
 	}
 
 	get state() {
@@ -182,8 +212,8 @@ class WsRpcConnection {
 		}
 
 		this._groups.push(group);
-		this.server._groups[group] = this.server._groups[group] || [];
-		this.server._groups[group].push(this.id);
+		this._server._groups[group] = this._server._groups[group] || [];
+		this._server._groups[group].push(this.id);
 		return true;
 	}
 
@@ -199,13 +229,13 @@ class WsRpcConnection {
 		}
 		this._groups.splice(idx, 1);
 
-		if (this.server._groups[group]) {
-			idx = this.server._groups[group].indexOf(this.id);
+		if (this._server._groups[group]) {
+			idx = this._server._groups[group].indexOf(this.id);
 			if (idx != -1) {
-				this.server._groups[group].splice(idx, 1);
+				this._server._groups[group].splice(idx, 1);
 			}
-			if (this.server._groups[group].length == 0) {
-				delete this.server._groups[group];
+			if (this._server._groups[group].length == 0) {
+				delete this._server._groups[group];
 			}
 		}
 
