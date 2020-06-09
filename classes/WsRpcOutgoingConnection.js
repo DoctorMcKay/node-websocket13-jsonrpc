@@ -6,8 +6,13 @@ const WsRpcServer = require('./WsRpcServer.js');
 const ACTIVE_SUBPROTOCOL = 'jsonrpc-2.0';
 
 class WsRpcOutgoingConnection extends WsRpcConnection {
+	/**
+	 * Establish a new outgoing connection.
+	 * @param {string} url
+	 * @param {object} [options]
+	 */
 	constructor(url, options) {
-		let opts = Object.assign({}, options);
+		let opts = Object.assign({}, options || {});
 		opts.protocols = [ACTIVE_SUBPROTOCOL];
 
 		let socket = new WS13.WebSocket(url, opts);
@@ -38,10 +43,16 @@ class WsRpcOutgoingConnection extends WsRpcConnection {
 		return [];
 	}
 
+	/**
+	 * @param {string} group
+	 */
 	joinGroup(group) {
 		throw new Error('Cannot join an outgoing connection to a group.');
 	}
 
+	/**
+	 * @param {string} group
+	 */
 	leaveGroup(group) {
 		throw new Error('Cannot leave an outgoing connection from a group.');
 	}
