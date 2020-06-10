@@ -377,7 +377,7 @@ This is how you should register notifications for outgoing connections.
 
 Emitted when the connection is successfully established.
 
-### disconnected
+### disconnect
 - `code` - A value from [`WebSocketStatusCode`](#websocketstatuscode)
 - `reason` - A string, possibly empty, desribing why we disconnected
 - `initiatedByUs` - A boolean indicating whether the disconnected was initiated by us/the client (true) or by the server (false)
