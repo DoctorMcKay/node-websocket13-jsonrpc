@@ -26,8 +26,8 @@ class WsRpcOutgoingConnection extends WsRpcConnection {
 			this.emit('connected', details);
 		});
 
-		socket.on('disconnect', (code, reason, initiatedByUs) => {
-			this.emit('disconnect', code, reason, initiatedByUs);
+		socket.on('disconnected', (code, reason, initiatedByUs) => {
+			this.emit('disconnected', code, reason, initiatedByUs);
 		});
 
 		socket.on('error', (err) => {
