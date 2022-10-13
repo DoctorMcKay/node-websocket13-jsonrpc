@@ -24,5 +24,8 @@
 		"@babel/core": "^7.9.6",
 		"@babel/preset-env": "^7.9.6",
 		"babel-preset-minify": "^0.5.1"
+	},
+	"scripts": {
+		"build-browser-client": "npx babel browser/JsonRpcWebSocket.js --out-file browser/JsonRpcWebSocket.min.js --source-maps --presets @babel/preset-env --presets babel-preset-minify --minified"
 	}
 }
