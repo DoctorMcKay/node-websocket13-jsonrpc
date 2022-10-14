@@ -1,18 +1,40 @@
-const {EventEmitter} = require('events');
-const WS13 = require('websocket13');
+import {EventEmitter} from 'events';
+import {Server as HttpServer} from 'http';
+import {Server as HttpsServer} from 'https';
+import {WebSocketServer} from 'websocket13';
 
-const WsRpcConnection = require('./WsRpcConnection.js');
+import WsRpcConnection from './WsRpcConnection';
+import WebSocketStatusCode from '../enums/WebSocketStatusCode';
 
 const ACTIVE_SUBPROTOCOL = 'jsonrpc-2.0';
 
-class WsRpcServer extends EventEmitter {
+export interface ServerOptions {
+	pingInterval?: number;
+	pingTimeout?: number;
+	pingFailures?: number;
+	permessageDeflate?: boolean;
+	requireObjectParams?: boolean;
+}
+
+export interface InternalServerOptions extends ServerOptions {
+	protocols?: string[];
+}
+
+export default class WsRpcServer extends EventEmitter {
+	_connections: object;
+	_groups: object;
+	_options: InternalServerOptions;
+	_requestHandlers: object;
+	_notificationHandlers: object;
+	_ws: WebSocketServer;
+
 	/**
 	 * @param {{pingInterval?: number, pingTimeout?: number, pingFailures?: number, permessageDeflate?: boolean, requireObjectParams?: boolean}} [options]
 	 */
-	constructor(options) {
+	constructor(options?: ServerOptions) {
 		super();
 
-		let opts = Object.assign({}, options || {});
+		let opts:InternalServerOptions = Object.assign({}, options || {});
 
 		this._connections = {};
 		this._groups = {};
@@ -22,7 +44,7 @@ class WsRpcServer extends EventEmitter {
 		this._notificationHandlers = {};
 
 		opts.protocols = [ACTIVE_SUBPROTOCOL];
-		this._ws = new WS13.WebSocketServer(opts);
+		this._ws = new WebSocketServer(opts);
 
 		// Set up the handshake handler
 		this._ws.on('handshake', (handshakeData, reject, accept) => {
@@ -49,7 +71,7 @@ class WsRpcServer extends EventEmitter {
 	 * Get all currently-active connections.
 	 * @returns {WsRpcConnection[]}
 	 */
-	get connections() {
+	get connections(): WsRpcConnection[] {
 		return Object.values(this._connections);
 	}
 
@@ -57,15 +79,15 @@ class WsRpcServer extends EventEmitter {
 	 * Get all extant group names.
 	 * @returns {string[]}
 	 */
-	get groups() {
+	get groups(): string[] {
 		return Object.keys(this._groups);
 	}
 
 	/**
 	 * Bind the WebSocket RPC server to a web server.
-	 * @param {HTTP.Server|HTTPS.Server} server
+	 * @param {HttpServer|HttpsServer} server
 	 */
-	http(server) {
+	http(server: HttpServer|HttpsServer) {
 		this._ws.http(server);
 	}
 
@@ -74,7 +96,7 @@ class WsRpcServer extends EventEmitter {
 	 * @param {string|string[]} group - The group name or an array of group names
 	 * @returns {WsRpcConnection[]}
 	 */
-	groupMembers(group) {
+	groupMembers(group: string|string[]): WsRpcConnection[] {
 		let ids = {};
 		if (!Array.isArray(group)) {
 			group = [group];
@@ -93,7 +115,7 @@ class WsRpcServer extends EventEmitter {
 	 * @param {function<Promise>} handler - A function to be invoked when the method is called.
 	 * Must return a value immediately or return a Promise. Invoked with arguments (WsRpcConnection, any params)
 	 */
-	registerMethod(name, handler) {
+	registerMethod(name: string, handler) {
 		this._requestHandlers[name] = handler;
 	}
 
@@ -102,7 +124,7 @@ class WsRpcServer extends EventEmitter {
 	 * @param {string} name
 	 * @param {function} handler - Invoked with arguments (WsRpcConnection, any params)
 	 */
-	registerNotification(name, handler) {
+	registerNotification(name: string, handler) {
 		this._notificationHandlers[name] = handler;
 	}
 
@@ -112,7 +134,7 @@ class WsRpcServer extends EventEmitter {
 	 * @param {string} method
 	 * @param {*} [params]
 	 */
-	notify(group, method, params) {
+	notify(group: string|string[]|null, method: string, params: any) {
 		(group === null ? this.connections : this.groupMembers(group)).forEach((connection) => {
 			connection.notify(method, params);
 		});
@@ -123,7 +145,7 @@ class WsRpcServer extends EventEmitter {
 	 * @param {string} method
 	 * @param {*} [params]
 	 */
-	notifyAll(method, params) {
+	notifyAll(method: string, params: any) {
 		return this.notify(null, method, params);
 	}
 
@@ -134,11 +156,9 @@ class WsRpcServer extends EventEmitter {
 	 * @param {boolean} initiatedByUs
 	 * @private
 	 */
-	_handleDisconnect(connection, code, reason, initiatedByUs) {
+	_handleDisconnect(connection: WsRpcConnection, code: WebSocketStatusCode|number, reason: string, initiatedByUs: boolean) {
 		this.emit('disconnect', connection, code, reason, initiatedByUs);
 		connection.groups.forEach(group => connection.leaveGroup(group));
 		delete this._connections[connection.id];
 	}
 }
-
-module.exports = WsRpcServer;

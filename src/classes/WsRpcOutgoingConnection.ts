@@ -1,11 +1,10 @@
-const WS13 = require('websocket13');
+import WS13 from 'websocket13';
 
-const WsRpcConnection = require('./WsRpcConnection.js');
-const WsRpcServer = require('./WsRpcServer.js');
+import WsRpcConnection from './WsRpcConnection';
 
 const ACTIVE_SUBPROTOCOL = 'jsonrpc-2.0';
 
-class WsRpcOutgoingConnection extends WsRpcConnection {
+export default class WsRpcOutgoingConnection extends WsRpcConnection {
 	/**
 	 * Establish a new outgoing connection.
 	 * @param {string} url
@@ -43,17 +42,11 @@ class WsRpcOutgoingConnection extends WsRpcConnection {
 		return [];
 	}
 
-	/**
-	 * @param {string} group
-	 */
-	joinGroup(group) {
+	joinGroup(group: string): boolean {
 		throw new Error('Cannot join an outgoing connection to a group.');
 	}
 
-	/**
-	 * @param {string} group
-	 */
-	leaveGroup(group) {
+	leaveGroup(group: string): boolean {
 		throw new Error('Cannot leave an outgoing connection from a group.');
 	}
 
@@ -76,5 +69,3 @@ class WsRpcOutgoingConnection extends WsRpcConnection {
 		this._notificationHandlers[name] = handler;
 	}
 }
-
-module.exports = WsRpcOutgoingConnection;

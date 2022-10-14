@@ -1,26 +1,38 @@
-const Crypto = require('crypto');
-const {EventEmitter} = require('events');
-const StdLib = require('@doctormckay/stdlib');
-const WS13 = require('websocket13');
+import {randomBytes} from 'crypto';
+import {EventEmitter} from 'events';
+import StdLib from '@doctormckay/stdlib';
+import WS13, {WebSocket, State as WebSocketState} from 'websocket13';
 
-const RpcError = require('../classes/RpcError.js');
+import RpcError from './RpcError';
+import WsRpcServer, {InternalServerOptions} from './WsRpcServer';
 
-const ConnectionState = require('../enums/ConnectionState.js');
-const JsonRpcErrorCode = require('../enums/JsonRpcErrorCode.js');
-const WebSocketStatusCode = require('../enums/WebSocketStatusCode.js');
+import ConnectionState from '../enums/ConnectionState';
+import JsonRpcErrorCode from '../enums/JsonRpcErrorCode';
+import WebSocketStatusCode from '../enums/WebSocketStatusCode';
+import {JsonRpcResponse} from '../interfaces/JsonRpc';
 
-class WsRpcConnection extends EventEmitter {
-	/**
-	 * @param {WsRpcServer} server
-	 * @param {WS13.WebSocket} socket
-	 */
-	constructor(server, socket) {
+export default class WsRpcConnection extends EventEmitter {
+	id: string;
+	remoteAddress: string;
+	handshakeData: object;
+
+	_server: WsRpcServer;
+	_socket: WebSocket;
+	_data: object;
+	_groups: string[];
+	_nextMsgId: number;
+	_requestHandlers: object;
+	_notificationHandlers: object;
+	_responseHandlers: object;
+	_options: InternalServerOptions;
+
+	constructor(server: WsRpcServer, webSocket) {
 		super();
 
-		this.remoteAddress = socket.remoteAddress;
-		this.handshakeData = socket.handshakeData;
+		this.remoteAddress = webSocket.remoteAddress;
+		this.handshakeData = webSocket.handshakeData;
 		this._server = server;
-		this._socket = socket;
+		this._socket = webSocket;
 		this._data = {};
 		this._groups = [];
 		this._nextMsgId = 1;
@@ -29,7 +41,7 @@ class WsRpcConnection extends EventEmitter {
 		if (this._server) {
 			// Generate an ID
 			do {
-				this.id = Crypto.randomBytes(4).toString('hex');
+				this.id = randomBytes(4).toString('hex');
 			} while (this._server._connections[this.id]);
 
 			this._server._connections[this.id] = this;
@@ -39,7 +51,7 @@ class WsRpcConnection extends EventEmitter {
 			this._options = this._server._options;
 		}
 
-		socket.on('message', async (type, data) => {
+		webSocket.on('message', async (type, data) => {
 			if (type != WS13.FrameType.Data.Text) {
 				this.disconnect(WS13.StatusCode.UnacceptableDataType, 'Received invalid frame type');
 				return;
@@ -115,25 +127,25 @@ class WsRpcConnection extends EventEmitter {
 		});
 
 		if (this._server) {
-			socket.on('disconnect', (code, reason, initiatedByUs) => {
+			webSocket.on('disconnect', (code, reason, initiatedByUs) => {
 				this._server._handleDisconnect(this, code, reason, initiatedByUs);
 			});
 
-			socket.on('error', (err) => {
+			webSocket.on('error', (err) => {
 				this._server._handleDisconnect(this, WebSocketStatusCode.AbnormalTermination, err.message, false);
 			});
 		}
 
-		socket.on('latency', (pingTime) => {
+		webSocket.on('latency', (pingTime) => {
 			this.emit('latency', pingTime);
 		});
 	}
 
-	get server() {
+	get server(): WsRpcServer {
 		return this._server;
 	}
 
-	get state() {
+	get state(): WebSocketState {
 		switch (this._socket.state) {
 			case WS13.State.Closed:
 			case WS13.State.Connecting: // this state should not be possible since we are a server
@@ -153,7 +165,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {WebSocketStatusCode|number} statusCode
 	 * @param {string} [reason]
 	 */
-	disconnect(statusCode, reason) {
+	disconnect(statusCode: WebSocketStatusCode|number, reason?: string) {
 		if (this.state == ConnectionState.Open) {
 			this._socket.disconnect(statusCode, reason);
 		}
@@ -164,7 +176,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {boolean} [detailed=false]
 	 * @returns {object|null}
 	 */
-	getPeerCertificate(detailed = false) {
+	getPeerCertificate(detailed = false): object|null {
 		return this._socket.getPeerCertificate(detailed);
 	}
 
@@ -172,7 +184,7 @@ class WsRpcConnection extends EventEmitter {
 	 * Same as TLS.TLSSocket.getProtocol
 	 * @returns {string|null}
 	 */
-	getSecurityProtocol() {
+	getSecurityProtocol(): string|null {
 		return this._socket.getSecurityProtocol();
 	}
 
@@ -180,7 +192,7 @@ class WsRpcConnection extends EventEmitter {
 	 * Send a ping to the client.
 	 * @returns {Promise<number>} - Resolves when the pong is received with the number of milliseconds it took
 	 */
-	ping() {
+	ping(): Promise<number> {
 		if (this.state != ConnectionState.Open) {
 			throw new Error('Cannot send ping on a connection that is not open');
 		}
@@ -197,7 +209,7 @@ class WsRpcConnection extends EventEmitter {
 	 * Get the groups to which this connection belongs.
 	 * @returns {string[]}
 	 */
-	get groups() {
+	get groups(): string[] {
 		return this._groups.slice(0);
 	}
 
@@ -206,7 +218,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {string} group
 	 * @returns {boolean} - true if joined group successfully; false if already in group
 	 */
-	joinGroup(group) {
+	joinGroup(group: string): boolean {
 		if (this._groups.includes(group)) {
 			return false;
 		}
@@ -222,7 +234,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {string} group
 	 * @returns {boolean} - true if left group successfully; false if not in group
 	 */
-	leaveGroup(group) {
+	leaveGroup(group: string): boolean {
 		let idx = this._groups.indexOf(group);
 		if (idx == -1) {
 			return false;
@@ -248,7 +260,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {*} params
 	 * @returns {boolean} - false if the connection is not open
 	 */
-	notify(method, params) {
+	notify(method: string, params: any): boolean {
 		if (this.state != ConnectionState.Open) {
 			return false;
 		}
@@ -268,7 +280,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {*} params
 	 * @returns {Promise}
 	 */
-	invoke(method, params) {
+	invoke(method: string, params: any): Promise<any> {
 		return new Promise((resolve, reject) => {
 			let id = this._nextMsgId++;
 			this._socket.send(JSON.stringify({
@@ -294,7 +306,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {*} value - If undefined, retrieves data value. If any other value, sets data value.
 	 * @returns {*}
 	 */
-	data(key, value = undefined) {
+	data(key: string, value:any = undefined): any {
 		return this._socket.data(key, value);
 	}
 
@@ -306,12 +318,12 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {object|null} data
 	 * @private
 	 */
-	_sendError(id, code, message, data = null) {
+	_sendError(id: any, code: JsonRpcErrorCode|number, message: string, data = null) {
 		if (this.state != ConnectionState.Open) {
 			return;
 		}
 
-		let response = {
+		let response:JsonRpcResponse = {
 			jsonrpc: '2.0',
 			id,
 			error: {
@@ -332,7 +344,7 @@ class WsRpcConnection extends EventEmitter {
 	 * @param {*} result
 	 * @private
 	 */
-	_sendResponse(id, result) {
+	_sendResponse(id: any, result: any) {
 		if (this.state != ConnectionState.Open) {
 			return;
 		}
@@ -344,5 +356,3 @@ class WsRpcConnection extends EventEmitter {
 		}));
 	}
 }
-
-module.exports = WsRpcConnection;
