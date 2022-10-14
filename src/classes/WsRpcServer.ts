@@ -134,7 +134,7 @@ export default class WsRpcServer extends EventEmitter {
 	 * @param {string} method
 	 * @param {*} [params]
 	 */
-	notify(group: string|string[]|null, method: string, params: any) {
+	notify(group: string|string[]|null, method: string, params?: any) {
 		(group === null ? this.connections : this.groupMembers(group)).forEach((connection) => {
 			connection.notify(method, params);
 		});
@@ -145,7 +145,7 @@ export default class WsRpcServer extends EventEmitter {
 	 * @param {string} method
 	 * @param {*} [params]
 	 */
-	notifyAll(method: string, params: any) {
+	notifyAll(method: string, params?: any) {
 		return this.notify(null, method, params);
 	}
 

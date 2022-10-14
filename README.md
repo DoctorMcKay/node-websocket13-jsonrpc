@@ -27,17 +27,17 @@ The module exports the following:
 
 # ConnectionState
 
-[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/ConnectionState.js)
+[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/ConnectionState.ts)
 
 # JsonRpcErrorCode
 
-[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/JsonRpcErrorCode.js)
+[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/JsonRpcErrorCode.ts)
 
 Reserved JSON-RPC error codes [are defined here](https://www.jsonrpc.org/specification#error_object).
 
 # WebSocketStatusCode
 
-[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/WebSocketStatusCode.js)
+[See enum here](https://github.com/DoctorMcKay/node-websocket13-jsonrpc/blob/master/enums/WebSocketStatusCode.ts)
 
 # RpcError
 
@@ -172,7 +172,8 @@ This class instantiates a WebSocket server.
 The constructor takes a single `options` object:
 
 - `requireObjectParams` - If passed and set to `true`, then incoming JSON-RPC messages will be rejected if their `params`
-                          are any data type except object (not including `null`) or array.
+                          are any data type except object (not including `null`) or array. If this is enabled, it will
+                          also automatically set params to `{}` if it's null or undefined.
 - All other options from [`WS13.WebSocketServer`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocketServer#options)
   are allowed, except `protocols`.
 
@@ -261,10 +262,13 @@ The `handler` function must return either a response value or a `Promise` which 
 If an error occurs while processing this method, you must throw (or reject the `Promise` with) a [`RpcError`](#rpcerror),
 which will be sent to the remote as an error response.
 
+By default, if a method invocation is received that does not match any registered method, a method not found error will
+be sent back. If you want to process unregistered methods yourself, you can use the DEFAULT_HANDLER symbol.
+
 #### Example
 
 ```js
-const {RpcError, JsonRpcErrorCode} = require('websocket13-jsonrpc2');
+const {RpcError, JsonRpcErrorCode, DEFAULT_METHOD} = require('websocket13-jsonrpc2');
 
 server.registerMethod('Add', (connection, params) => {
     if (typeof params != 'object' || !Array.isArray(params) || params.length != 2 || typeof params[0] != 'number' || typeof params[1] != 'number') {
@@ -282,6 +286,11 @@ server.registerMethod('AddAsync', async (connection, params) => {
     await new Promise((resolve) => setTimeout(resolve, 1000));
     return params[0] + params[1];
 });
+
+server.registerMethod(DEFAULT_METHOD, (connection, method, params) => {
+	console.log(`Client ${connection.id} invoked unregistered method ${method} with params ${params}`);
+	return 1;
+});
 ```
 
 ### registerNotification(name, handler)
@@ -295,6 +304,8 @@ Please note that unless the `requireObjectParams` option is set, `params` can be
 (including null or undefined).
 
 As a JSON-RPC notification requires no response, `handler` should not return anything.
+
+You can also register a default handler for notifications in the same way as for methods.
 
 ### notify(group, name[, params])
 - `group` - String name of group or array of string names of groups to send notification to. Use `null` to send a notification to all active clients.

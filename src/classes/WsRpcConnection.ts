@@ -11,6 +11,8 @@ import JsonRpcErrorCode from '../enums/JsonRpcErrorCode';
 import WebSocketStatusCode from '../enums/WebSocketStatusCode';
 import {JsonRpcResponse} from '../interfaces/JsonRpc';
 
+import {DEFAULT_HANDLER} from '../index';
+
 export default class WsRpcConnection extends EventEmitter {
 	id: string;
 	remoteAddress: string;
@@ -65,6 +67,7 @@ export default class WsRpcConnection extends EventEmitter {
 
 			let isRequest = typeof data.method == 'string';
 			let isResponse = typeof data.id != 'undefined' && (typeof data.result != 'undefined' || typeof data.error == 'object');
+			let isDefaultHandler = false;
 
 			// Make sure it's a well-formed JSON-RPC object
 			if (data.jsonrpc !== '2.0' || (!isRequest && !isResponse)) {
@@ -81,18 +84,27 @@ export default class WsRpcConnection extends EventEmitter {
 					// This is a request
 					let handler = this._requestHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(data.id, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
+						handler = this._requestHandlers[DEFAULT_HANDLER];
+						isDefaultHandler = true;
+
+						if (typeof handler != 'function') {
+							return this._sendError(data.id, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
+						}
 					}
 
 					// Invoke the handler
 					try {
-						let result;
+						let handlerArgs = [];
+
 						if (this._server) {
-							result = await handler(this, data.params);
-						} else {
-							// No need to include `this` if this is an outgoing connection
-							result = await handler(data.params);
+							handlerArgs.push(this); // only include this if this is an incoming connection
 						}
+						if (isDefaultHandler) {
+							handlerArgs.push(data.method); // only include method if this is the default handler
+						}
+						handlerArgs.push(data.params);
+
+						let result = await handler.apply(null, handlerArgs);
 						this._sendResponse(data.id, result);
 					} catch (ex) {
 						if (ex instanceof RpcError) {
@@ -105,15 +117,26 @@ export default class WsRpcConnection extends EventEmitter {
 					// This is a notification
 					let handler = this._notificationHandlers[data.method];
 					if (typeof handler != 'function') {
-						return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
+						handler = this._notificationHandlers[DEFAULT_HANDLER];
+						isDefaultHandler = true;
+
+						if (typeof handler != 'function') {
+							return this._sendError(null, JsonRpcErrorCode.MethodNotFound, 'Method not found', {method: data.method});
+						}
 					}
 
 					// Invoke the handler. No need to worry about responses or errors.
+					let handlerArgs = [];
+
 					if (this._server) {
-						handler(this, data.params);
-					} else {
-						handler(data.params);
+						handlerArgs.push(this);
 					}
+					if (isDefaultHandler) {
+						handlerArgs.push(data.method);
+					}
+					handlerArgs.push(data.params);
+
+					handler.apply(null, handlerArgs);
 				}
 			} else if (isResponse && data.id !== null) {
 				let handler = this._responseHandlers[data.id];
@@ -257,12 +280,16 @@ export default class WsRpcConnection extends EventEmitter {
 	/**
 	 * Send a notification. A JSON-RPC notification is a message that does not expect a response.
 	 * @param {string} method
-	 * @param {*} params
+	 * @param {*} [params]
 	 * @returns {boolean} - false if the connection is not open
 	 */
-	notify(method: string, params: any): boolean {
+	notify(method: string, params?: any): boolean {
 		if (this.state != ConnectionState.Open) {
 			return false;
+		}
+
+		if (this._options.requireObjectParams && (params === null || typeof params === 'undefined')) {
+			params = {};
 		}
 
 		this._socket.send(JSON.stringify({
@@ -277,11 +304,15 @@ export default class WsRpcConnection extends EventEmitter {
 	/**
 	 * Invoke a method.
 	 * @param {string} method
-	 * @param {*} params
+	 * @param {*} [params]
 	 * @returns {Promise}
 	 */
-	invoke(method: string, params: any): Promise<any> {
+	invoke(method: string, params?: any): Promise<any> {
 		return new Promise((resolve, reject) => {
+			if (this._options.requireObjectParams && (params === null || typeof params === 'undefined')) {
+				params = {};
+			}
+
 			let id = this._nextMsgId++;
 			this._socket.send(JSON.stringify({
 				jsonrpc: '2.0',

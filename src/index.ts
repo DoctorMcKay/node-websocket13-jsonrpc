@@ -7,6 +7,8 @@ import ConnectionState from './enums/ConnectionState';
 import JsonRpcErrorCode from './enums/JsonRpcErrorCode';
 import WebSocketStatusCode from './enums/WebSocketStatusCode';
 
+const DEFAULT_HANDLER = Symbol('default handler');
+
 export {
 	RpcError,
 	WsRpcConnection,
@@ -15,5 +17,7 @@ export {
 
 	ConnectionState,
 	JsonRpcErrorCode,
-	WebSocketStatusCode
+	WebSocketStatusCode,
+
+	DEFAULT_HANDLER
 };
