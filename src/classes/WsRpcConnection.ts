@@ -104,7 +104,7 @@ export default class WsRpcConnection extends EventEmitter {
 						}
 						handlerArgs.push(data.params);
 
-						let result = await handler.apply(null, handlerArgs);
+						let result = await handler(...handlerArgs);
 						this._sendResponse(data.id, result);
 					} catch (ex) {
 						if (ex instanceof RpcError) {
@@ -136,7 +136,7 @@ export default class WsRpcConnection extends EventEmitter {
 					}
 					handlerArgs.push(data.params);
 
-					handler.apply(null, handlerArgs);
+					handler(...handlerArgs);
 				}
 			} else if (isResponse && data.id !== null) {
 				let handler = this._responseHandlers[data.id];
