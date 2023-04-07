@@ -63,8 +63,7 @@ throw new RpcError('File not found', 100, {filename: '/root/example.txt'});
 
 ### id
 
-A string containing a random ID assigned to this connection. Connection IDs are guaranteed unique for any given set
-of active connections, but once a connection is closed its ID can be reused immediately.
+A string containing a UUIDv4 assigned to this connection.
 
 ### remoteAddress
 

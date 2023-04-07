@@ -14,6 +14,7 @@
 	"homepage": "https://github.com/DoctorMcKay/node-websocket13-jsonrpc",
 	"dependencies": {
 		"@doctormckay/stdlib": "^1.11.0",
+		"uuid": "^9.0.0",
 		"websocket13": "^2.2.0"
 	},
 	"engines": {

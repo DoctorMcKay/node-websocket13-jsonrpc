@@ -1,6 +1,6 @@
-import {randomBytes} from 'crypto';
 import {EventEmitter} from 'events';
 import StdLib from '@doctormckay/stdlib';
+import {v4 as uuid4} from 'uuid';
 import WS13, {WebSocket, State as WebSocketState} from 'websocket13';
 
 import RpcError from './RpcError';
@@ -41,11 +41,7 @@ export default class WsRpcConnection extends EventEmitter {
 		this._responseHandlers = {};
 
 		if (this._server) {
-			// Generate an ID
-			do {
-				this.id = randomBytes(4).toString('hex');
-			} while (this._server._connections[this.id]);
-
+			this.id = uuid4();
 			this._server._connections[this.id] = this;
 
 			this._requestHandlers = this._server._requestHandlers;
