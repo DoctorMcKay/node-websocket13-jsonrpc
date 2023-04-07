@@ -307,18 +307,22 @@ As a JSON-RPC notification requires no response, `handler` should not return any
 You can also register a default handler for notifications in the same way as for methods.
 
 ### notify(group, name[, params])
-- `group` - String name of group or array of string names of groups to send notification to. Use `null` to send a notification to all active clients.
+- `group` - String name of group or array of string names of groups to send notification to.
+            Use `null` to send a notification to all active clients.
 - `name` - String name of notification to send
 - `params` - Any data type
 
 Sends a JSON-RPC notification to an entire group at once. You can also pass an array of groups to send a notification
 to all members of all specified groups.
 
+Returns a number indicating how many clients received this notification.
+
 ### notifyAll(name[, params])
 - `name` - String name of notification to send
 - `params` - Any data type
 
 Sends a JSON-RPC notification to all connected clients.
+Returns a number indicating how many clients received this notification.
 
 # WsRpcOutgoingConnection
 
