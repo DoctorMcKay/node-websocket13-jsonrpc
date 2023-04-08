@@ -146,7 +146,7 @@ export default class WsRpcConnection extends EventEmitter {
 		});
 
 		if (this._server) {
-			webSocket.on('disconnect', (code, reason, initiatedByUs) => {
+			webSocket.on('disconnected', (code, reason, initiatedByUs) => {
 				this._server._handleDisconnect(this, code, reason, initiatedByUs);
 			});
 
