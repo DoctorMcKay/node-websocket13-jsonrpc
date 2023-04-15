@@ -170,20 +170,33 @@ This class instantiates a WebSocket server.
 
 The constructor takes a single `options` object:
 
-- `requireObjectParams` - If passed and set to `true`, then incoming JSON-RPC messages will be rejected if their `params`
-                          are any data type except object (not including `null`) or array. If this is enabled, it will
-                          also automatically set params to `{}` if it's null or undefined.
+- `requireObjectParams` - See below
 - All other options from [`WS13.WebSocketServer`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocketServer#options)
   are allowed, except `protocols`.
 
-The `requireObjectParams` option is designed to allow you to do things like this without worrying about invalid incoming
-params causing a crash:
+### requireObjectParams
+
+If `requireObjectParams` is set to true, then the following will happen:
+
+- If the `params` property of incoming messages is undefined or null, it will be converted to `{}` (empty object)
+- If the `params` property of incoming messages is not an object, array, undefined, or null, then the message will be
+  rejected with error code -32602 and message `"Invalid params"`
+- If the `params` property of outgoing messages is undefined or null, it will be converted to `{}` (empty object)
+
+This option is designed to allow you to do things like this without worrying about invalid incoming params causing a crash:
 
 ```js
 server.registerMethod('Add', (connection, [a, b]) => {
+	if (typeof a != 'number' || typeof b != 'number') {
+		throw new RpcError('An operand is not a number', JsonRpcErrorCode.InvalidParams);
+    }
+	
     return a + b;
 });
 ```
+
+The module cannot validate that the incoming `params` object actually contains the keys you're expecting, so you still
+need to check their types and values yourself.
 
 ## Events
 
@@ -252,9 +265,9 @@ union of group members.
 - `handler` - A function to be invoked when the method is called
 
 Registers a new method. When JSON-RPC messages invoking this method are received, the `handler` will be called with the
-signature `(WsRpcConnection, any params)`.
+signature `(WsRpcConnection connection, any params)`.
 
-Please note that unless the `requireObjectParams` option is set, `params` can be any JSON type
+Please note that unless the [`requireObjectParams`](#requireobjectparams) option is set, `params` can be any JSON type
 (including null or undefined).
 
 The `handler` function must return either a response value or a `Promise` which is resolved to the response value.
@@ -267,7 +280,7 @@ be sent back. If you want to process unregistered methods yourself, you can use 
 #### Example
 
 ```js
-const {RpcError, JsonRpcErrorCode, DEFAULT_METHOD} = require('websocket13-jsonrpc2');
+const {RpcError, JsonRpcErrorCode, DEFAULT_HANDLER} = require('websocket13-jsonrpc2');
 
 server.registerMethod('Add', (connection, params) => {
     if (typeof params != 'object' || !Array.isArray(params) || params.length != 2 || typeof params[0] != 'number' || typeof params[1] != 'number') {
@@ -286,7 +299,17 @@ server.registerMethod('AddAsync', async (connection, params) => {
     return params[0] + params[1];
 });
 
-server.registerMethod(DEFAULT_METHOD, (connection, method, params) => {
+// This is only safe if you've enabled requireObjectParams, otherwise an incoming params value that isn't an object or
+// array will cause a crash.
+server.registerMethod('Subtract', (connection, [a, b]) => {
+	if (typeof a != 'number' || typeof b != 'number') {
+		throw new RpcError('Invalid params', JsonRpcErrorCode.InvalidParams);
+    }
+	
+	return a - b;
+});
+
+server.registerMethod(DEFAULT_HANDLER, (connection, method, params) => {
 	console.log(`Client ${connection.id} invoked unregistered method ${method} with params ${params}`);
 	return 1;
 });
@@ -297,9 +320,9 @@ server.registerMethod(DEFAULT_METHOD, (connection, method, params) => {
 - `handler` - A function to be invoked when the notification is received
 
 Registers a new notification. When JSON-RPC messages containing this notification are received, the `handler` will be
-called with the signature `(WsRpcConnection, any params)`.
+called with the signature `(WsRpcConnection connection, any params)`.
 
-Please note that unless the `requireObjectParams` option is set, `params` can be any JSON type
+Please note that unless the [`requireObjectParams`](#requireobjectparams) option is set, `params` can be any JSON type
 (including null or undefined).
 
 As a JSON-RPC notification requires no response, `handler` should not return anything.
@@ -336,8 +359,7 @@ The constructor takes two arguments:
 
 - `url` - The WebSocket URL you want to connect to (e.g. `ws://example.com/?some=query`)
 - `options` - Optional. An object with zero or more of these properties:
-    - `requireObjectParams` - If passed and set to `true`, then incoming JSON-RPC messages will be rejected if their `params`
-                              are any data type except object (not including `null`) or array.
+    - `requireObjectParams` - See [`requireObjectParams`](#requireobjectparams) documentation for `WsRpcServer`
     - All other options from [`WS13.WebSocket`](https://github.com/DoctorMcKay/node-websocket13/wiki/WebSocket#options)
       are allowed, except `protocols`.
       
@@ -392,7 +414,7 @@ Emitted when the connection is successfully established.
 
 ### disconnected
 - `code` - A value from [`WebSocketStatusCode`](#websocketstatuscode)
-- `reason` - A string, possibly empty, desribing why we disconnected
+- `reason` - A string, possibly empty, describing why we disconnected
 - `initiatedByUs` - A boolean indicating whether the disconnected was initiated by us/the client (true) or by the server (false)
 
 Emitted when we disconnect from the server.

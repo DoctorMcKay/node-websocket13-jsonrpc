@@ -72,8 +72,16 @@ export default class WsRpcConnection extends EventEmitter {
 
 			if (isRequest) {
 				// If we want params to be objects, then make sure they are
-				if (this._options.requireObjectParams && (typeof data.params != 'object' || data.params === null)) {
-					return this._sendError(data.id || null, JsonRpcErrorCode.InvalidParams, 'Invalid params');
+				if (this._options.requireObjectParams) {
+					// If params are undefined or null, coerce them to empty object
+					if (typeof data.params == 'undefined' || data.params === null) {
+						data.params = {};
+					}
+
+					// Make sure params are an object
+					if (typeof data.params != 'object') {
+						return this._sendError(data.id || null, JsonRpcErrorCode.InvalidParams, 'Invalid params');
+					}
 				}
 
 				if (typeof data.id != 'undefined') {
