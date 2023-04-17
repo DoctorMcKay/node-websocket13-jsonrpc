@@ -15,7 +15,7 @@
 	"dependencies": {
 		"@doctormckay/stdlib": "^1.11.0",
 		"uuid": "^9.0.0",
-		"websocket13": "^2.2.0"
+		"websocket13": "^3.0.0-beta.1"
 	},
 	"engines": {
 		"node": ">=12.22.0"

@@ -1,7 +1,7 @@
 import {EventEmitter} from 'events';
 import StdLib from '@doctormckay/stdlib';
 import {v4 as uuid4} from 'uuid';
-import WS13, {WebSocket, State as WebSocketState} from 'websocket13';
+import {WebSocket, FrameType, StatusCode, State as WebSocketState} from 'websocket13';
 
 import RpcError from './RpcError';
 import WsRpcServer, {InternalServerOptions} from './WsRpcServer';
@@ -50,8 +50,8 @@ export default class WsRpcConnection extends EventEmitter {
 		}
 
 		webSocket.on('message', async (type, data) => {
-			if (type != WS13.FrameType.Data.Text) {
-				this.disconnect(WS13.StatusCode.UnacceptableDataType, 'Received invalid frame type');
+			if (type != FrameType.Data.Text) {
+				this.disconnect(StatusCode.UnacceptableDataType, 'Received invalid frame type');
 				return;
 			}
 
@@ -172,17 +172,17 @@ export default class WsRpcConnection extends EventEmitter {
 		return this._server;
 	}
 
-	get state(): WebSocketState {
+	get state(): ConnectionState {
 		switch (this._socket.state) {
-			case WS13.State.Closed:
-			case WS13.State.Connecting: // this state should not be possible since we are a server
+			case WebSocketState.Closed:
+			case WebSocketState.Connecting: // this state should not be possible since we are a server
 				return ConnectionState.Closed;
 
-			case WS13.State.Connected:
+			case WebSocketState.Connected:
 				return ConnectionState.Open;
 
-			case WS13.State.Closing:
-			case WS13.State.ClosingError:
+			case WebSocketState.Closing:
+			case WebSocketState.ClosingError:
 				return ConnectionState.Closing;
 		}
 	}

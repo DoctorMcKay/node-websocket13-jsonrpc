@@ -1,4 +1,4 @@
-import WS13 from 'websocket13';
+import {WebSocket} from 'websocket13';
 
 import WsRpcConnection from './WsRpcConnection';
 
@@ -14,7 +14,7 @@ export default class WsRpcOutgoingConnection extends WsRpcConnection {
 		let opts = Object.assign({}, options || {});
 		opts.protocols = [ACTIVE_SUBPROTOCOL];
 
-		let socket = new WS13.WebSocket(url, opts);
+		let socket = new WebSocket(url, opts);
 
 		super(null, socket);
 		this._options = opts;
