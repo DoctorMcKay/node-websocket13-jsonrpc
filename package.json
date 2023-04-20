@@ -1,6 +1,9 @@
 {
 	"name": "websocket13-jsonrpc",
 	"version": "1.2.2",
+	"publishConfig": {
+		"tag": "latest"
+	},
 	"description": "JSON-RPC 2.0 implementation on top of WebSocket13",
 	"author": "Alex Corn <alex@alexcorn.com>",
 	"repository": {
@@ -15,7 +18,7 @@
 	"dependencies": {
 		"@doctormckay/stdlib": "^1.11.0",
 		"uuid": "^9.0.0",
-		"websocket13": "^3.0.0-beta.1"
+		"websocket13": "^3.0.0-beta.2"
 	},
 	"engines": {
 		"node": ">=12.22.0"

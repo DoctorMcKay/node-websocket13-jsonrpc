@@ -74,3 +74,27 @@ jobs:
                 with:
                     name: package
                     path: websocket13-jsonrpc-*.tgz
+
+    publish:
+        needs: [lint, build]
+        runs-on: ubuntu-latest
+        if: success() && github.event.ref == 'refs/heads/master' && contains(github.event.head_commit.message, '#npm-publish')
+
+        steps:
+            -   uses: actions/checkout@v3
+                with:
+                    fetch-depth: 1
+
+            -   name: Use Node.js 18.x
+                uses: actions/setup-node@v3
+                with:
+                    node-version: 18.x
+
+            -   name: npm install
+                working-directory: .
+                run: npm install --ignore-scripts
+
+            -   name: npm publish
+                uses: JS-DevTools/npm-publish@v2.0.0
+                with:
+                    token: ${{ secrets.NPM_ACCESS_TOKEN }}
