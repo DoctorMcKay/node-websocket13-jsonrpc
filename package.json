@@ -1,8 +1,8 @@
 {
 	"name": "websocket13-jsonrpc",
-	"version": "1.2.2",
+	"version": "2.0.0-beta.1",
 	"publishConfig": {
-		"tag": "latest"
+		"tag": "beta"
 	},
 	"description": "JSON-RPC 2.0 implementation on top of WebSocket13",
 	"author": "Alex Corn <alex@alexcorn.com>",
