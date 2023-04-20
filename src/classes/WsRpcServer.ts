@@ -1,10 +1,11 @@
-import {EventEmitter} from 'events';
 import {Server as HttpServer} from 'http';
 import {Server as HttpsServer} from 'https';
-import {WebSocketServer} from 'websocket13';
+import {TypedEmitter} from 'tiny-typed-emitter';
+import {HandshakeData, WebSocketServer} from 'websocket13';
 
 import WsRpcConnection from './WsRpcConnection';
 import WebSocketStatusCode from '../enums/WebSocketStatusCode';
+import {BaseWebSocketOptions} from 'websocket13/dist/interfaces-internal';
 
 const ACTIVE_SUBPROTOCOL = 'jsonrpc-2.0';
 
@@ -20,7 +21,22 @@ export interface InternalServerOptions extends ServerOptions {
 	protocols?: string[];
 }
 
-export default class WsRpcServer extends EventEmitter {
+interface WsRpcServerEvents {
+	handshake: (
+		handshakeData: HandshakeData,
+		reject: (statusCode?: number, body?: string|object, headers?: {[name: string]: string|number}) => void,
+		accept: (
+			response?: {
+				headers?: {[name: string]: string|number},
+				options?: BaseWebSocketOptions
+			}
+		) => WsRpcConnection
+	) => void,
+	connect: (connection: WsRpcConnection) => void,
+	disconnect: (connection: WsRpcConnection, code: WebSocketStatusCode|number, reason: string, initiatedByUs: boolean) => void
+}
+
+export default class WsRpcServer extends TypedEmitter<WsRpcServerEvents> {
 	_connections: object;
 	_groups: object;
 	_options: InternalServerOptions;

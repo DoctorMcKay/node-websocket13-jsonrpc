@@ -1,5 +1,5 @@
-import {EventEmitter} from 'events';
 import StdLib from '@doctormckay/stdlib';
+import {TypedEmitter} from 'tiny-typed-emitter';
 import {v4 as uuid4} from 'uuid';
 import {WebSocket, FrameType, StatusCode, State as WebSocketState} from 'websocket13';
 
@@ -12,8 +12,17 @@ import WebSocketStatusCode from '../enums/WebSocketStatusCode';
 import {JsonRpcResponse} from '../interfaces/JsonRpc';
 
 import {DEFAULT_HANDLER} from '../index';
+import {WebSocketConnectEventArgs} from 'websocket13/dist/interfaces-internal';
 
-export default class WsRpcConnection extends EventEmitter {
+interface WsRpcConnectionEvents {
+	latency: (pingTimeMilliseconds: number) => void,
+	// following are for outgoing connections only
+	connected: (details: WebSocketConnectEventArgs) => void,
+	disconnected: (code: number, reason: string, initiatedByUs: boolean) => void,
+	error: (err: Error) => void
+}
+
+export default class WsRpcConnection extends TypedEmitter<WsRpcConnectionEvents> {
 	id: string;
 	remoteAddress: string;
 	handshakeData: object;
