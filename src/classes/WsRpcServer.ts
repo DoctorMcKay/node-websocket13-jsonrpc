@@ -56,8 +56,7 @@ export default class WsRpcServer extends EventEmitter {
 				response = response || {};
 				let conn = new WsRpcConnection(this, accept({
 					headers: response.headers,
-					options: response.options,
-					extensions: response.extensions
+					options: response.options
 				}));
 				setImmediate(() => {
 					this.emit('connect', conn);
