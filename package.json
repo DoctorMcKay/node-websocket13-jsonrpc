@@ -1,8 +1,8 @@
 {
 	"name": "websocket13-jsonrpc",
-	"version": "2.0.0-beta.2",
+	"version": "2.0.0",
 	"publishConfig": {
-		"tag": "beta"
+		"tag": "latest"
 	},
 	"description": "JSON-RPC 2.0 implementation on top of WebSocket13",
 	"author": "Alex Corn <alex@alexcorn.com>",
@@ -19,7 +19,7 @@
 		"@doctormckay/stdlib": "^1.11.0",
 		"tiny-typed-emitter": "^2.1.0",
 		"uuid": "^9.0.0",
-		"websocket13": "^3.0.0-beta.2"
+		"websocket13": "^3.0.1"
 	},
 	"engines": {
 		"node": ">=12.22.0"
