@@ -25,8 +25,39 @@ jobs:
             node-version: 12.x
             package-name: websocket13-jsonrpc
 
+    syntax-check:
+        # Run for external PRs, but not on our own internal PRs as they'll be run by the push to the branch.
+        if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name != 'DoctorMcKay/node-websocket13-jsonrpc'
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+                node-version: [ 12.x, 14.x, 16.x, 18.x, 20.x ]
+
+        steps:
+            -   uses: actions/checkout@v3
+                with:
+                    fetch-depth: 1
+
+            -   name: Use Node.js ${{ matrix.node-version }}
+                uses: actions/setup-node@v3
+                with:
+                    node-version: ${{ matrix.node-version }}
+
+            -   name: Cache dependencies
+                uses: actions/cache@v3
+                with:
+                    path: node_modules
+                    key: ${{ runner.os }}-node_modules
+
+            -   name: npm install
+                run: npm install
+
+            -   name: Syntax check
+                run: cd dist && node index.js
+
     publish:
-        needs: [ lint, build ]
+        needs: [ lint, build, syntax-check ]
         if: success() && github.event.ref == 'refs/heads/master' && contains(github.event.head_commit.message, '#npm-publish')
         uses: DoctorMcKay/github-workflows/.github/workflows/npm-publish.yml@master
         secrets:
